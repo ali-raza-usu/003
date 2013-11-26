@@ -1,0 +1,3 @@
+19:57:52,689 DEBUG LogTimeOnSend.aj: 25 - Data in the buffer 333
+19:57:52,470 DEBUG LogTimeOnSend.aj: 28 - Client send the message  class interactive.TranslationMessage at time 19:57:52
+19:57:52,690 DEBUG LogTimeOnReceive.aj: 31 - Client received the message class interactive.TranslationMessage at time 19:57:52

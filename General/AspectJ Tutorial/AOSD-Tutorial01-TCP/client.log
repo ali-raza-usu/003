@@ -1,0 +1,3 @@
+19:57:50,358 DEBUG Client.java: 39 - Connection is accepted by server
+19:57:52,472 DEBUG Client.java: 63 - Sending strings 'sdfsdf' and 'sdfsdfsddsf'
+19:57:52,691 DEBUG Client.java: 81 - Received Levenshtein Distance between string : sdfsdf and string sdfsdfsddsf is 5
