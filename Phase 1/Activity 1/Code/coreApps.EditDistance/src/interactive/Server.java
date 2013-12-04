@@ -1,4 +1,4 @@
-package interactive;
+package Interactive;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -24,13 +24,17 @@ public class Server extends Thread {
 	Logger _logger = Logger.getLogger(Server.class);
 	SelectionKey selkey = null;
 	Selector sckt_manager = null;
-	ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
+	//ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
+	KMClient _KMClient = new KMClient();
+	public SharedKey key = null;
 
 	public Server() {
 	}
 
 	public void run() {
 		try {
+			_KMClient.getSharedKey("Server", "abcde");
+			key = _KMClient.getKey();
 			coreServer();
 		} catch (Exception e) {
 			_logger.error(ExceptionUtils.getStackTrace(e));
@@ -76,13 +80,14 @@ public class Server extends Thread {
 						}
 						// reading and writing data
 						if (key.isReadable()) {
-							buffer = ByteBuffer.allocateDirect(2048);
+							//buffer = ByteBuffer.allocateDirect(2048);
 							buffer.clear();
 							while (client.read(buffer) <= 0)
 								;
 							{
-
-								buffer.flip();
+								System.out.println("Server received the data in bytebuffer of length "+ buffer.remaining());
+								//buffer.flip();
+								//System.out.println("after flip: Server received the data in bytebuffer of length "+ buffer.remaining());
 								// New Input Message
 								msg = (TranslationMessage) convertBufferToMessage(buffer);
 								_logger.debug("Received " + msg.getData1());

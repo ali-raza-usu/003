@@ -1,4 +1,4 @@
-package interactive;
+package Interactive;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,9 +19,11 @@ public class Client extends Thread {
 	Logger _logger = Logger.getLogger(Client.class);
 	SelectionKey selkey = null;
 	Selector sckt_manager = null;
-	ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
-	ByteBuffer readBuf = ByteBuffer.allocateDirect(2048);
+	//ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
+	//ByteBuffer readBuf = ByteBuffer.allocateDirect(2048);
 	BufferedReader bufReader = null;
+	KMClient _KMClient = new KMClient();
+	public SharedKey key = null;
 
 	public Client() {
 	}
@@ -40,7 +42,8 @@ public class Client extends Thread {
 			while (!sc.finishConnect())
 				; // wait until the connection gets established
 			_logger.debug("Connection is accepted by server");
-
+			
+			
 			while (true) {
 				if (sc.isConnected()) {
 					try {
@@ -62,6 +65,7 @@ public class Client extends Thread {
 								msg = new TranslationMessage(_data1, _data2);
 								buffer = ByteBuffer.wrap(Encoder.encode(msg));
 								sc.write(buffer);
+								System.out.println("Client is writing buffer of length "+ buffer.remaining());
 								_logger.debug("Sending strings '"
 										+ msg.getData1() + "' and '"
 										+ msg.getData2() + "'");
@@ -77,7 +81,7 @@ public class Client extends Thread {
 
 							while (sc.read(readBuf) <= 0)
 								;
-							readBuf.flip();
+							//readBuf.flip();
 							msg = (TranslationMessage) convertBufferToMessage(readBuf);
 							System.out.println("Received " + msg.getResponse());
 							_logger.debug("Received " + msg.getResponse());
@@ -107,6 +111,10 @@ public class Client extends Thread {
 
 	public void run() {
 		try {
+			_KMClient.getSharedKey("Client", "abcdef");
+			key = _KMClient.getKey();
+			
+			System.out.println("Received " + key);
 			coreClient();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -119,7 +127,7 @@ public class Client extends Thread {
 		_client.start();
 	}
 
-	private TranslationMessage convertBufferToMessage(ByteBuffer buffer) {
+	public TranslationMessage convertBufferToMessage(ByteBuffer buffer) {
 		TranslationMessage message = null;
 		byte[] bytes = new byte[buffer.remaining()];
 		buffer.get(bytes);
@@ -129,4 +137,15 @@ public class Client extends Thread {
 		return message;
 	}
 
+	public SharedKey getKey() {
+		return key;
+	}
+
+	public void setKey(SharedKey key) {
+		this.key = key;
+	}
+
+	
+	
+	
 }
