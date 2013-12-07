@@ -1,0 +1,16 @@
+My application needs to have an ecryptor and decryptor. In distributed system the sender encrypt the data before sending and decrypt it after recieving.
+
+To make my code more organized, has a good design and easy modifiable; I decided to implement it using Aspect oriented programming. During my work i have the following problems:
+
+I had a lot of problems most of these problems were technichal problems.
+I'm not expert in java and I did not programming using this language for a long time. 
+The most important problem for me was, "How to shared variables betweeen the java and aspect classes. 
+
+
+I try to solve the problem by searching on the enternet, when I failed Iasked Ali to help me.
+
+
+
+
+
+
