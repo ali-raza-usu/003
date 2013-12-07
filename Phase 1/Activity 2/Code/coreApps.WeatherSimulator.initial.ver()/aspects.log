@@ -1,0 +1,5 @@
+14:57:26,813 DEBUG Reciever.java: 62 - number of bytes are 197
+14:57:26,816 DEBUG Reciever.java: 64 - Before Encryption
+14:57:26,816 DEBUG Reciever.java: 69 - number of bytes are 
+14:57:28,107 DEBUG Reciever.java: 72 - Before Send Encryption: Reciever buffer of length 197the key isjavax.crypto.spec.SecretKeySpec@4f964bc8
+14:57:28,249 DEBUG Reciever.java: 75 - After Send Encryption : Reciever buffer of length 197-----class utilities.messages.WeatherDataRequest
