@@ -1,0 +1,7 @@
+15:03:48,229 DEBUG Client.java: 42 - Connection is accepted by server
+15:03:51,419 DEBUG Client.java: 65 - Sending strings 'ali' and 'aadsad'
+15:03:51,642 DEBUG Client.java: 83 - Received Levenshtein Distance between string : ali and string aadsad is 5
+15:03:57,249 DEBUG Client.java: 65 - Sending strings 'adasd' and 'asdasda'
+15:03:57,252 DEBUG Client.java: 83 - Received Levenshtein Distance between string : adasd and string asdasda is 2
+15:03:59,474 DEBUG Client.java: 65 - Sending strings 'asdasad' and 'asdasd'
+15:03:59,477 DEBUG Client.java: 83 - Received Levenshtein Distance between string : asdasad and string asdasd is 1
