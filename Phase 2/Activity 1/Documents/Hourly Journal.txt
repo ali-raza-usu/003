@@ -1,0 +1,8 @@
+this testing give me a lot of xperience in java programing.
+I had a lot of errors during my implementation, most of these errors were in buffer, and it was not easy to debug them.
+
+I did not implement any distributed program in java. 
+
+As Aspect programing it was easy thing to determiine the pointcuts and how to work with it , but Eclips does not have a good compiler. and it is not easy to debug the code using it.
+
+
