@@ -1,5 +1,7 @@
 package Aspect_part;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.security.Key;
 
@@ -37,17 +39,21 @@ public aspect Encryptor {
 	public static ByteBuffer Server.buffer = ByteBuffer.allocateDirect(5048);
 	
 
+	//dc.read(readBuf)
 	
-   private pointcut ChannelRead(SocketChannel _channel, ByteBuffer _buffer) :
-		call(* SocketChannel+.read(ByteBuffer)) && target(_channel) && args(_buffer);
+   private pointcut ChannelRead(DatagramChannel _channel, ByteBuffer _buffer) :
+		call(* DatagramChannel+.read(ByteBuffer)) && target(_channel) && args(_buffer);
+   
+   private pointcut ChannelReceive(DatagramChannel _channel, ByteBuffer _buffer) :
+		call(* DatagramChannel+.receive(ByteBuffer)) && target(_channel) && args(_buffer);
   
-  
+  //dc.send(buffer, srcAddr);
  
-  private pointcut ChannelWrite(SocketChannel _channel, ByteBuffer _buffer) :
-		call(* SocketChannel+.write(ByteBuffer)) && target(_channel) && args(_buffer);
+  private pointcut ChannelWrite(DatagramChannel _channel, ByteBuffer _buffer, SocketAddress _addr) :
+		call(* DatagramChannel+.send(ByteBuffer, SocketAddress)) && target(_channel) && args(_buffer, _addr);
   
   
-  int around ( SocketChannel _channel, ByteBuffer _buffer) : ChannelRead(_channel, _buffer)  ///Read -- recieve
+  int around ( DatagramChannel _channel, ByteBuffer _buffer) : ChannelRead(_channel, _buffer)  ///Read -- recieve
   {	  
 		int readBytes = proceed(_channel, _buffer);
 		if (readBytes > 0) {
@@ -76,17 +82,48 @@ public aspect Encryptor {
 					Server.buffer = ByteBuffer.wrap(Encoder.encode(msg));
 	
 				}
-			}
-			
-					
+			}		
 		return readBytes;
+		
+  }
+  
+  Object around ( DatagramChannel _channel, ByteBuffer _buffer) : ChannelReceive(_channel, _buffer)  ///Read -- recieve
+  {	  
+		Object socket = proceed(_channel, _buffer);
+		if (_buffer.remaining() > 0) {
+				ByteBuffer tempBuf = _buffer.duplicate();
+				tempBuf.flip();
+		        byte[] bytes = new byte[tempBuf.remaining()];
+		        tempBuf.get(bytes);
+				Object obj = thisJoinPoint.getThis();
+				
+				if (obj instanceof Client) // message is read by client, use the client key  
+				{
+					unwrappedKey = Client.key.getSharedKey();
+					Message temp=Decrypt(bytes, unwrappedKey);
+					TranslationResponseMessage msg = (TranslationResponseMessage)temp;
+					Client.readBuf = ByteBuffer.wrap(Encoder.encode(msg));
+				
+				//	_logger.debug("Client received the message "+ msg.getClass()+" at time " + getCurrentTime());
+					
+				}
+				else
+				{
+					unwrappedKey = Server.key.getSharedKey();
+					
+					Message temp=Decrypt(bytes, unwrappedKey);
+					TranslationRequestMessage msg = (TranslationRequestMessage)temp;
+					Server.buffer = ByteBuffer.wrap(Encoder.encode(msg));
+	
+				}
+			}		
+		return socket;
 		
   }
   
 
 
-
-Object around( SocketChannel _channel, ByteBuffer _buffer) : ChannelWrite(_channel, _buffer) // write -- send
+int around( DatagramChannel _channel, ByteBuffer _buffer, SocketAddress _addr) : ChannelWrite(_channel, _buffer, _addr) // write -- send
 {
 			ByteBuffer tempBuf = _buffer.duplicate();
 	 		Message message = null;
@@ -101,7 +138,7 @@ Object around( SocketChannel _channel, ByteBuffer _buffer) : ChannelWrite(_chann
 				Client.buffer.clear();
 				Client.buffer = ByteBuffer.wrap(Encrypt(message, unwrappedKey));
 				
-				return proceed(_channel, Client.buffer);
+				return proceed(_channel, Client.buffer, _addr);
 			}
 			else
 			{
@@ -111,7 +148,7 @@ Object around( SocketChannel _channel, ByteBuffer _buffer) : ChannelWrite(_chann
 				Server.buffer.clear();
 				Server.buffer = ByteBuffer.wrap(Encrypt(message, unwrappedKey));
 				
-				return proceed(_channel, Server.buffer);
+				return proceed(_channel, Server.buffer, _addr);
 
 			}		
 

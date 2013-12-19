@@ -1,156 +1,136 @@
 package Interactive;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import utilities.*;
 
 
-import utilities.Encoder;
-
-import utilities.TranslationRequestMessage;
-import utilities.TranslationResponseMessage;
-
-public class Client extends Thread {
+public class Client extends Thread
+{
 	Logger _logger = Logger.getLogger(Client.class);
-	SelectionKey selkey = null;
-	Selector sckt_manager = null;
-	//ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
-	//ByteBuffer readBuf = ByteBuffer.allocateDirect(2048);
-	BufferedReader bufReader = null;
-	
+    SelectionKey selkey=null;
+    Selector sckt_manager=null;
+    private SocketAddress srcAddr = null;
+    //ByteBuffer buffer = ByteBuffer.allocateDirect(2048);
+    //ByteBuffer readBuf = ByteBuffer.allocateDirect(2048);
+    BufferedReader bufReader = null;
 
-	public Client() {
+    public Client() {
 	}
 
-	public void coreClient() {
 
-		String _data1 = null;
-		String _data2 = null;
-		SocketChannel sc = null;
-		try {
-			// Connecting to Server
+    public void coreClient(){
+    	
+       String _data1 = null;
+       String _data2 = null;
+       DatagramChannel dc = null;
+        try
+        { 
+        	//Connecting to Server
+        	
+        	dc = DatagramChannel.open();
+            dc.configureBlocking(false);       
+            srcAddr = new InetSocketAddress(8897);
+            dc.connect(srcAddr);
+            _logger.debug("Channel connected!");
+            while(true)
+            {
+            	 if(dc.isConnected())
+            	 {	     
+            		 try{
+            			if(dc != null){
+            				System.out.println("===============Levenshtein Translator======================");
+            				System.out.print("Enter String 1 : ");
+            				bufReader = new BufferedReader(new InputStreamReader(System.in));            				
+            			    _data1 = bufReader.readLine();
+            			    
+            			    System.out.print("Enter String 2 : ");
+            				bufReader = new BufferedReader(new InputStreamReader(System.in));            				
+            			    _data2 = bufReader.readLine();	
+            			    
+            			    TranslationRequestMessage msg = null;
+            				if(_data1!= null && _data2 != null){
+	            				msg = new TranslationRequestMessage(_data1, _data2);
+	            				buffer = ByteBuffer.wrap(Encoder.encode(msg));          
+	            	    		dc.send(buffer, srcAddr);
+	            	    		_logger.debug("Sending strings '" + msg.getData1()+ "' and '"+msg.getData2()+"'");     
+	            	    		if(msg.getData1().equals("quit") || msg.getData2().equals("quit")){
+	                       			dc.close();
+	                       			return;
+	             				}
+            				}
+             				buffer.clear();	
+             				readBuf = ByteBuffer.allocateDirect(2048);
+             				readBuf.clear();
+            				while(dc.read(readBuf)<=0);
+	            				//readBuf.flip();
+	            				TranslationResponseMessage msg_resp = (TranslationResponseMessage)convertBufferToMessage(readBuf);
+	            				System.out.println("Received " + msg_resp.getResponse());
+	            				_logger.debug("Received " + msg_resp.getResponse());	             				
+            			}
+            		 }catch(Exception e)
+            		 {
+            			e.printStackTrace();
+            			_logger.error(ExceptionUtils.getStackTrace(e));
+            		 }
+            	 }
+            }   
+        } 
+        catch (IOException e) 
+        {                  	
+        	e.printStackTrace();
+        	_logger.error(ExceptionUtils.getStackTrace(e));
+        }
+        finally
+        {                
+              try 
+              { 
+              	if (dc.isConnected()){ 
+              		dc.close();
+                  }
+              	if (bufReader != null){ 
+              		bufReader.close();
+                  }                        
+              }
+              catch (IOException e) 
+              { 
+              	_logger.error(ExceptionUtils.getStackTrace(e)); 
+              }                   
+         }
+      }
 
-			sc = SocketChannel.open();
-			sc.configureBlocking(false);
-			sc.connect(new InetSocketAddress(8897));
-			while (!sc.finishConnect())
-				; // wait until the connection gets established
-			_logger.debug("Connection is accepted by server");
-			
-			
-			while (true) {
-				if (sc.isConnected()) {
-					try {
-						if (sc != null) {
-							System.out
-									.println("===============Levenshtein Translator======================");
-							System.out.print("Enter String 1 : ");
-							bufReader = new BufferedReader(
-									new InputStreamReader(System.in));
-							_data1 = bufReader.readLine();
+     
+     public void run()
+     {
+      try{
+        coreClient();
+      }
+      catch(Exception e){
+    	  e.printStackTrace();
+    	  _logger.error(e);
+      }}
+     
 
-							System.out.print("Enter String 2 : ");
-							bufReader = new BufferedReader(
-									new InputStreamReader(System.in));
-							_data2 = bufReader.readLine();
-
-							TranslationRequestMessage msg = null;
-							if (_data1 != null && _data2 != null) {
-								msg = new TranslationRequestMessage(_data1, _data2);
-								buffer = ByteBuffer.wrap(Encoder.encode(msg));
-								
-								sc.write(buffer);
-
-								_logger.debug("Sending strings '"
-										+ msg.getData1() + "' and '"
-										+ msg.getData2() + "'");
-								if (msg.getData1().equals("quit")
-										|| msg.getData2().equals("quit")) {
-									sc.close();
-									return;
-								}
-							}
-							buffer.clear();
-
-							readBuf.clear();
-
-							while (sc.read(readBuf) <= 0)
-								;
-							//readBuf.flip();
-							TranslationResponseMessage Rmsg = (TranslationResponseMessage) convertBufferToResponseMessage(readBuf);
-							
-							_logger.debug("Received " + Rmsg.getResponse());
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-						_logger.error(ExceptionUtils.getStackTrace(e));
-					}
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			_logger.error(ExceptionUtils.getStackTrace(e));
-		} finally {
-			try {
-				if (sc.isConnected()) {
-					sc.close();
-				}
-				if (bufReader != null) {
-					bufReader.close();
-				}
-			} catch (IOException e) {
-				_logger.error(ExceptionUtils.getStackTrace(e));
-			}
-		}
-	}
-
-	public void run() {
-		try {
-			
-			
-			
-			coreClient();
-		} catch (Exception e) {
-			e.printStackTrace();
-			_logger.error(e);
-		}
-	}
-
-	public static void main(String args[]) {
-		Client _client = new Client();
-		_client.start();
-	}
-
-	public TranslationRequestMessage convertBufferToRequestMessage(ByteBuffer buffer) {
-		TranslationRequestMessage message = null;
-		byte[] bytes = new byte[buffer.remaining()];
-		buffer.get(bytes);
-		message = (TranslationRequestMessage) Encoder.decode(bytes);
-		buffer.clear();
-		buffer = ByteBuffer.wrap(Encoder.encode(message));
-		return message;
-	}
-
-	public TranslationResponseMessage convertBufferToResponseMessage(ByteBuffer buffer) {
-		TranslationResponseMessage message = null;
-		byte[] bytes = new byte[buffer.remaining()];
-		buffer.get(bytes);
-		message = (TranslationResponseMessage) Encoder.decode(bytes);
-		buffer.clear();
-		buffer = ByteBuffer.wrap(Encoder.encode(message));
-		return message;
-	}
-
-	
-	
-	
-	
+     public static void main(String args[])
+     {
+     	Client _client = new Client();
+     	_client.start();
+     }
+     
+     
+     private Message convertBufferToMessage(ByteBuffer buffer) {
+    	 Message message = null;					
+		 byte[] bytes = new byte[buffer.remaining()];
+		 buffer.get(bytes);
+		 message = (Message)Encoder.decode(bytes);
+		 buffer.clear();
+		 buffer = ByteBuffer.wrap(Encoder.encode(message));  		
+		 return message;
+	}	
+    
 }
